@@ -63,4 +63,31 @@ class ProcesVerbal extends Model
             default => $query->where('televerse_par', $user->id),
         };
     }
+
+    /**
+     * Recherche « intelligente » (UC11) : chaque mot doit apparaître dans
+     * la promotion, la filière, l'année, le semestre ou la session.
+     * Toujours après visiblesPar() (RG25) :
+     * ProcesVerbal::visiblesPar($user)->recherche('GRH 2023 S3')->get().
+     */
+    public function scopeRecherche(Builder $query, ?string $texte): Builder
+    {
+        $mots = preg_split('/\s+/', trim((string) $texte), -1, PREG_SPLIT_NO_EMPTY);
+
+        foreach (array_slice($mots, 0, 6) as $mot) {
+            $like = '%'.$mot.'%';
+
+            $query->where(function (Builder $q) use ($like) {
+                $q->where('session', 'like', $like)
+                    ->orWhereHas('promotion', fn (Builder $p) => $p->where('libelle', 'like', $like)
+                        ->orWhereHas('filiere', fn (Builder $f) => $f->where('code', 'like', $like)
+                            ->orWhere('libelle', 'like', $like)))
+                    ->orWhereHas('anneeAcademique', fn (Builder $a) => $a->where('libelle', 'like', $like))
+                    ->orWhereHas('semestre', fn (Builder $s) => $s->where('code', 'like', $like)
+                        ->orWhere('libelle', 'like', $like));
+            });
+        }
+
+        return $query;
+    }
 }

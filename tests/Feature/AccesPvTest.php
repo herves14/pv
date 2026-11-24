@@ -134,4 +134,27 @@ class AccesPvTest extends TestCase
         $this->assertFalse(User::factory()->chef()->create()->can('create', Filiere::class));
         $this->assertFalse(User::factory()->create()->can('create', Filiere::class));
     }
+
+    public function test_la_recherche_filtre_et_respecte_les_droits(): void
+    {
+        $grh = Filiere::factory()->create(['code' => 'GRH']);
+        $stat = Filiere::factory()->create(['code' => 'STAT']);
+        $chef = User::factory()->chef($grh)->create();
+
+        $promo = Promotion::factory()->create(['filiere_id' => $grh->id, 'libelle' => 'Promotion 2022-2025']);
+        $s3 = \App\Models\Semestre::factory()->create(['code' => 'S3']);
+        $voulu = ProcesVerbal::factory()->create(['promotion_id' => $promo->id, 'semestre_id' => $s3->id, 'session' => 'rattrapage']);
+        ProcesVerbal::factory()->create(['promotion_id' => $promo->id, 'session' => 'normale']);
+        // Même semestre, mais dans une autre filière : jamais visible pour ce chef (RG25).
+        ProcesVerbal::factory()->create([
+            'promotion_id' => Promotion::factory()->create(['filiere_id' => $stat->id, 'libelle' => 'Promotion 2022-2025'])->id,
+            'semestre_id' => $s3->id,
+            'session' => 'rattrapage',
+        ]);
+
+        $ids = ProcesVerbal::visiblesPar($chef)->recherche('2022 s3 RATTRAPAGE')->pluck('id')->all();
+
+        $this->assertSame([$voulu->id], $ids);
+        $this->assertCount(2, ProcesVerbal::visiblesPar($chef)->recherche('')->get());
+    }
 }
