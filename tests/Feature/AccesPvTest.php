@@ -10,7 +10,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
-/** Vérifie les règles d'accès RG05, RG18 à RG21. */
+/** Vérifie les règles d'accès RG05, RG17 à RG23. */
 class AccesPvTest extends TestCase
 {
     use RefreshDatabase;
@@ -103,5 +103,35 @@ class AccesPvTest extends TestCase
         $this->actingAs($chef)->get('/admin')->assertForbidden();
         $this->actingAs($chef)->get('/expedition')->assertForbidden();
         $this->actingAs($chef)->get('/departement')->assertOk();
+    }
+
+    public function test_un_chef_peut_ajouter_un_pv_seulement_dans_sa_filiere(): void
+    {
+        $grh = Filiere::factory()->create();
+        $stat = Filiere::factory()->create();
+        $chef = User::factory()->chef($grh)->create();
+
+        $this->assertTrue($chef->can('create', ProcesVerbal::class));
+        $this->assertTrue($chef->can('televerserDans', [ProcesVerbal::class, Promotion::factory()->create(['filiere_id' => $grh->id])]));
+        $this->assertFalse($chef->can('televerserDans', [ProcesVerbal::class, Promotion::factory()->create(['filiere_id' => $stat->id])]));
+    }
+
+    public function test_un_chef_remplace_ses_envois_mais_pas_ceux_des_autres(): void
+    {
+        $grh = Filiere::factory()->create();
+        $chef = User::factory()->chef($grh)->create();
+        $sien = $this->pvDansFiliere($grh, $chef);
+        $autre = $this->pvDansFiliere($grh);
+
+        $this->assertTrue($chef->can('update', $sien));
+        $this->assertTrue($chef->can('delete', $sien));
+        $this->assertFalse($chef->can('update', $autre));
+    }
+
+    public function test_seul_l_admin_ajoute_une_filiere(): void
+    {
+        $this->assertTrue(User::factory()->admin()->create()->can('create', Filiere::class));
+        $this->assertFalse(User::factory()->chef()->create()->can('create', Filiere::class));
+        $this->assertFalse(User::factory()->create()->can('create', Filiere::class));
     }
 }

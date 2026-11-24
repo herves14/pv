@@ -7,8 +7,8 @@ rangés par filière, promotion, année académique et semestre.
 
 | Rôle | Ce qu'il peut faire |
 | --- | --- |
-| `admin` (directeur) | Tout : crée les comptes, gère les référentiels, consulte toutes les filières |
-| `chef_departement` | Consulte uniquement les PV de sa filière |
+| `admin` (directeur) | Tout : crée les comptes, ajoute des filières, gère les référentiels, consulte tout |
+| `chef_departement` | Consulte et ajoute les PV de sa filière uniquement |
 | `expedition` | Téléverse les PV PDF numérisés (et revoit ses propres envois) |
 
 Pas de saisie de notes, pas de génération de PV, pas de recherche par matricule (évolution possible plus tard).

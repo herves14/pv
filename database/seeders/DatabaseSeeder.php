@@ -12,7 +12,7 @@ class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
-        // Les 8 filières (= départements). Liste PROVISOIRE : codes et libellés
+        // 8 filières de départ (= départements) ; l'admin peut en ajouter d'autres (RG23). Liste PROVISOIRE : codes et libellés
         // à vérifier auprès de la scolarité de l'ENEAM avant la démonstration.
         $filieres = [
             'GRH' => 'Gestion des Ressources Humaines',
