@@ -33,7 +33,8 @@ return [
         'local' => [
             'driver' => 'local',
             'root' => storage_path('app/private'),
-            'serve' => true,
+            // false : les PV ne sont JAMAIS servis directement, seulement par FichierPvController (RG14).
+            'serve' => false,
             'throw' => false,
             'report' => false,
         ],

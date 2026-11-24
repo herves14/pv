@@ -7,17 +7,15 @@ use App\Models\Promotion;
 use App\Models\User;
 
 /**
- * Droits sur un PV précis (section 6 de la modélisation).
- * Laravel découvre cette Policy automatiquement grâce à son nom.
+ * Droits sur un PV précis (matrice de la section 6 de la modélisation).
+ *
+ * Utilisation : Gate::authorize('view', $pv) dans un contrôleur,
+ *
+ * @can('update', $pv) dans une vue, $user->can('delete', $pv) ailleurs.
  */
 class ProcesVerbalPolicy
 {
-    public function viewAny(User $user): bool
-    {
-        return $user->actif;
-    }
-
-    /** RG18 (admin), RG19 (chef : sa filière), RG20 (expédition : ses envois). */
+    /** Ouvrir / télécharger : RG18 (admin), RG19 (chef : sa filière), RG20 (expédition : ses envois). */
     public function view(User $user, ProcesVerbal $pv): bool
     {
         if ($user->estAdmin()) {
@@ -25,22 +23,22 @@ class ProcesVerbalPolicy
         }
 
         if ($user->estChef()) {
-            return $this->estDeSaFiliere($user, $pv->promotion);
+            return $user->dirige($pv->promotion->filiere_id);
         }
 
         return $pv->televerse_par === $user->id;
     }
 
-    /** Afficher le bouton « Ajouter un PV » : admin, expédition et chef (RG22). */
+    /** Afficher le bouton « Ajouter un PV » : les 3 rôles (RG22 pour le chef). */
     public function create(User $user): bool
     {
         return $user->actif;
     }
 
     /**
-     * Téléverser un PV pour CETTE promotion. À appeler dans le contrôleur :
-     * Gate::authorize('televerserDans', [ProcesVerbal::class, $promotion]).
-     * RG22 : un chef ne peut ajouter que dans une promotion de sa filière.
+     * Téléverser un PV dans CETTE promotion (RG22).
+     * Admin et expédition : partout. Chef : seulement dans sa filière.
+     * Appel : Gate::authorize('televerserDans', [ProcesVerbal::class, $promotion]).
      */
     public function televerserDans(User $user, Promotion $promotion): bool
     {
@@ -48,10 +46,10 @@ class ProcesVerbalPolicy
             return true;
         }
 
-        return $this->estDeSaFiliere($user, $promotion);
+        return $user->dirige($promotion->filiere_id);
     }
 
-    /** RG17 : remplacer le fichier (admin : tout ; chef et expédition : leurs envois). */
+    /** Remplacer le fichier (RG17) : admin partout ; chef et expédition, leurs propres envois. */
     public function update(User $user, ProcesVerbal $pv): bool
     {
         if ($user->estAdmin()) {
@@ -62,20 +60,13 @@ class ProcesVerbalPolicy
             return false;
         }
 
-        // Un chef qui aurait changé de filière ne garde pas la main sur ses anciens envois.
-        return $user->estExpedition() || $this->estDeSaFiliere($user, $pv->promotion);
+        // Un chef qui a changé de filière perd la main sur ses anciens envois.
+        return $user->estExpedition() || $user->dirige($pv->promotion->filiere_id);
     }
 
-    /** RG17 : supprimer. */
+    /** Supprimer : mêmes droits que remplacer (RG17). */
     public function delete(User $user, ProcesVerbal $pv): bool
     {
         return $this->update($user, $pv);
-    }
-
-    private function estDeSaFiliere(User $user, Promotion $promotion): bool
-    {
-        return $user->estChef()
-            && $user->filiere_id !== null
-            && $promotion->filiere_id === $user->filiere_id;
     }
 }

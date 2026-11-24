@@ -35,11 +35,26 @@ Connexion : identifiants `ADMIN_EMAIL` / `ADMIN_PASSWORD` du fichier `.env`.
 Les PDF sont stockés dans `storage/app/private` (disque `local`), jamais dans `public/` :
 chaque ouverture passe par `FichierPvController`, qui vérifie les droits avec `ProcesVerbalPolicy`.
 
+Le scan avec la caméra fonctionne sur téléphone partout ; la webcam d'un ordinateur
+exige que le site soit servi en **HTTPS** (ou sur `localhost`).
+
+## Où trouver quoi
+
+Le plan détaillé, fichier par fichier, est dans [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+Chaque fichier commence par un commentaire qui explique son rôle.
+
 ## Tests
 
 ```sh
 php artisan test
 ```
 
-`tests/Feature/AccesPvTest.php` vérifie la redirection par rôle, le refus des comptes
-désactivés et le cloisonnement des PV par filière.
+68 tests dans `tests/Feature` :
+
+| Fichier | Ce qu'il vérifie |
+| --- | --- |
+| `MiddlewareEtRolesTest` | chaque espace n'accepte que ses rôles, compte désactivé déconnecté, 5 tentatives de connexion par minute, menu selon le rôle |
+| `AccesPvTest` | redirection par rôle, cloisonnement des PV par filière, droits des Policies |
+| `GestionPvTest` | ajout, scan, doublon refusé, PDF seulement, 20 Mo maximum, remplacement et suppression du fichier, chef limité à sa filière |
+| `AdministrationTest` | comptes (RG03, RG04, RG06), filières (RG11, RG23), format des années, toutes les pages admin |
+| `RechercheTest` | la recherche ne montre que les PV autorisés (RG25) |

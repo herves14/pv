@@ -8,15 +8,19 @@ use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
- * Seule porte d'accès aux PDF : les fichiers sont sur le disque privé
- * "local" (storage/app/private), jamais dans public/ (RG14, RG19).
+ * Seule porte d'accès aux PDF (UC08).
+ *
+ * Les fichiers sont sur le disque privé « local » (storage/app/private) et
+ * jamais dans public/ : impossible de les ouvrir en devinant une adresse.
+ * Chaque ouverture repasse par ProcesVerbalPolicy::view (RG18 à RG20).
  */
 class FichierPvController extends Controller
 {
-    /** Affiche le PDF dans la visionneuse du navigateur (UC08). */
+    /** Affiche le PDF dans la visionneuse du navigateur (en-tête « inline »). */
     public function afficher(ProcesVerbal $pv): StreamedResponse
     {
         Gate::authorize('view', $pv);
+        abort_unless(Storage::disk('local')->exists($pv->fichier_chemin), 404, 'Le fichier de ce PV est introuvable.');
 
         return Storage::disk('local')->response(
             $pv->fichier_chemin,
@@ -26,10 +30,11 @@ class FichierPvController extends Controller
         );
     }
 
-    /** Force le téléchargement. */
+    /** Force le téléchargement du PDF (en-tête « attachment »). */
     public function telecharger(ProcesVerbal $pv): StreamedResponse
     {
         Gate::authorize('view', $pv);
+        abort_unless(Storage::disk('local')->exists($pv->fichier_chemin), 404, 'Le fichier de ce PV est introuvable.');
 
         return Storage::disk('local')->download($pv->fichier_chemin, $pv->fichier_nom_original);
     }

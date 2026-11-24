@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Filiere;
 use App\Models\ProcesVerbal;
 use App\Models\Promotion;
+use App\Models\Semestre;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
@@ -142,7 +143,7 @@ class AccesPvTest extends TestCase
         $chef = User::factory()->chef($grh)->create();
 
         $promo = Promotion::factory()->create(['filiere_id' => $grh->id, 'libelle' => 'Promotion 2022-2025']);
-        $s3 = \App\Models\Semestre::factory()->create(['code' => 'S3']);
+        $s3 = Semestre::factory()->create(['code' => 'S3']);
         $voulu = ProcesVerbal::factory()->create(['promotion_id' => $promo->id, 'semestre_id' => $s3->id, 'session' => 'rattrapage']);
         ProcesVerbal::factory()->create(['promotion_id' => $promo->id, 'session' => 'normale']);
         // Même semestre, mais dans une autre filière : jamais visible pour ce chef (RG25).

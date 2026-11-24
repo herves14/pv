@@ -3,9 +3,10 @@
 namespace Database\Factories;
 
 use App\Models\Filiere;
+use App\Models\Promotion;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
-/** @extends Factory<\App\Models\Promotion> */
+/** @extends Factory<Promotion> */
 class PromotionFactory extends Factory
 {
     public function definition(): array
